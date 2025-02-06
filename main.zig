@@ -25,4 +25,8 @@ pub fn main() void {
     const layer1_output = inputs.product(weights.transpose()).plus(biases);
     const layer2_output = layer1_output.product(weights_2.transpose()).plus(biases_2);
     layer2_output.print();
+
+    const layer = math.LayerDense(3, 4).init();
+    layer.weights.print();
+    std.debug.print("{any}\n", .{layer.biases});
 }

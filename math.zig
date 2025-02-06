@@ -98,6 +98,32 @@ pub fn Vector(comptime M: usize) type {
     };
 }
 
+pub fn LayerDense(comptime M: usize, comptime N: usize) type {
+    return struct {
+        weights: Matrix(M, N),
+        biases: Vector(N),
+
+        pub fn init() LayerDense(M, N) {
+            var m = Matrix(M, N){ .values = [_]Vector(N){Vector(N){ .values = [_]f64{0} ** N }} ** M };
+            var prng = std.Random.DefaultPrng.init(@as(u64, @intCast(std.time.timestamp())));
+            var random = prng.random();
+
+            const b = Vector(N){ .values = [_]f64{0} ** N };
+
+            for (0..M) |i| {
+                for (0..N) |j| {
+                    m.values[i].values[j] = 0.01 * random.floatNorm(f32);
+                }
+            }
+
+            return .{
+                .weights = m,
+                .biases = b,
+            };
+        }
+    };
+}
+
 test "matrix product" {
     const weights: Matrix(3, 4) = .{ .values = [_]Vector(4){
         .{ .values = .{ 0.2, 0.8, -0.5, 1.0 } },
