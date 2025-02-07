@@ -4,10 +4,16 @@ const assert = std.debug.assert;
 pub fn Matrix(comptime M: usize, comptime N: usize) type {
     return struct {
         values: [M]Vector(N),
+        rows: usize = M,
+        cols: usize = N,
 
         pub const Rows = M;
         pub const Cols = N;
         const Self = @This();
+
+        pub fn init() Matrix(M, N) {
+            return Matrix(M, N){ .values = [_]Vector(N){Vector(N).init()} ** M };
+        }
 
         pub fn dot(self: Self, inputs: [N]f64) Vector(M) {
             var layer_outputs: [M]f64 = [_]f64{0} ** M;
@@ -20,7 +26,7 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
         }
 
         pub fn plus(self: Self, inputs: Vector(N)) Matrix(M, N) {
-            var outputs = Matrix(N, M){ .values = [_]Vector(M){Vector(M){ .values = [_]f64{0} ** M }} ** N };
+            var outputs = Matrix(N, M).init();
 
             for (0..M) |i| {
                 outputs.values[i].values = inputs.plus(self.values[i]);
@@ -33,7 +39,7 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
             const P = MatrixType.Cols;
             assert(M == P);
 
-            var outputs = Matrix(M, P){ .values = [_]Vector(P){Vector(P){ .values = [_]f64{0} ** P }} ** M };
+            var outputs = Matrix(M, P).init();
 
             for (0..M) |i| {
                 for (0..P) |j| {
@@ -49,7 +55,7 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
         }
 
         pub fn transpose(self: Self) Matrix(N, M) {
-            var outputs = Matrix(N, M){ .values = [_]Vector(M){Vector(M){ .values = [_]f64{0} ** M }} ** N };
+            var outputs = Matrix(N, M).init();
 
             for (0..N) |i| {
                 for (0..M) |j| {
@@ -60,10 +66,10 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
         }
 
         pub fn print(self: Self) void {
-            std.debug.print("\nMatrix {}x{}:\n", .{ M, N });
-            for (self.values) |row| {
-                for (row.values) |value| {
-                    std.debug.print("{d:.4} ", .{value});
+            for (self.values, 0..) |row, i| {
+                row.print();
+                if (i < M - 1) {
+                    std.debug.print(",", .{});
                 }
                 std.debug.print("\n", .{});
             }
@@ -76,6 +82,10 @@ pub fn Vector(comptime M: usize) type {
         values: [M]f64,
 
         const Self = @This();
+
+        pub fn init() Vector(M) {
+            return Vector(M){ .values = [_]f64{0} ** M };
+        }
 
         pub fn plus(self: Self, vector: Vector(M)) [M]f64 {
             var output = [_]f64{0} ** M;
@@ -95,6 +105,29 @@ pub fn Vector(comptime M: usize) type {
             }
             return output;
         }
+
+        pub fn print(self: Self) void {
+            // First check if we have any negative numbers
+            var has_negative = false;
+            for (self.values) |value| {
+                if (value < 0) {
+                    has_negative = true;
+                    break;
+                }
+            }
+
+            std.debug.print("[ ", .{});
+            for (self.values, 0..) |value, i| {
+                if (has_negative and value >= 0) {
+                    std.debug.print(" ", .{});
+                }
+                std.debug.print("{d:.4}", .{value});
+                if (i < M - 1) {
+                    std.debug.print(", ", .{});
+                }
+            }
+            std.debug.print(" ]", .{});
+        }
     };
 }
 
@@ -104,11 +137,11 @@ pub fn LayerDense(comptime M: usize, comptime N: usize) type {
         biases: Vector(N),
 
         pub fn init() LayerDense(M, N) {
-            var m = Matrix(M, N){ .values = [_]Vector(N){Vector(N){ .values = [_]f64{0} ** N }} ** M };
+            var m = Matrix(M, N).init();
             var prng = std.Random.DefaultPrng.init(@as(u64, @intCast(std.time.timestamp())));
             var random = prng.random();
 
-            const b = Vector(N){ .values = [_]f64{0} ** N };
+            const b = Vector(N).init();
 
             for (0..M) |i| {
                 for (0..N) |j| {
@@ -131,10 +164,10 @@ test "matrix product" {
         .{ .values = .{ -0.26, -0.27, 0.17, 0.87 } },
     } };
     const inputs = [_]f64{ 1.0, 2.0, 3.0, 2.5 };
-    var biases = [_]f64{ 2.0, 3.0, 0.5 };
+    const biases = Vector(3){ .values = [_]f64{ 2.0, 3.0, 0.5 } };
 
     const output = weights.dot(inputs);
-    const final = output.plus(biases[0..]);
+    const final = output.plus(biases);
 
     try std.testing.expectApproxEqAbs(final[0], 4.8, 0.0001);
     try std.testing.expectApproxEqAbs(final[1], 1.21, 0.0001);

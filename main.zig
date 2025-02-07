@@ -24,9 +24,12 @@ pub fn main() void {
 
     const layer1_output = inputs.product(weights.transpose()).plus(biases);
     const layer2_output = layer1_output.product(weights_2.transpose()).plus(biases_2);
+    std.debug.print("Matrix {d}x{d}\n", .{ layer2_output.rows, layer2_output.cols });
     layer2_output.print();
 
-    const layer = math.LayerDense(3, 4).init();
+    const layer = math.LayerDense(2, 5).init();
+    std.debug.print("Matrix {d}x{d}\n", .{ layer.weights.rows, layer.weights.cols });
     layer.weights.print();
-    std.debug.print("{any}\n", .{layer.biases});
+    std.debug.print("Vector {d}\n", .{layer.biases.values.len});
+    layer.biases.print();
 }
