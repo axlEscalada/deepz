@@ -26,7 +26,7 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
         }
 
         pub fn plus(self: Self, inputs: Vector(N)) Matrix(M, N) {
-            var outputs = Matrix(N, M).init();
+            var outputs = Matrix(M, N).init();
 
             for (0..M) |i| {
                 outputs.values[i].values = inputs.plus(self.values[i]);
@@ -37,7 +37,8 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
         pub fn product(self: Self, matrix: anytype) Matrix(M, @TypeOf(matrix).Cols) {
             const MatrixType = @TypeOf(matrix);
             const P = MatrixType.Cols;
-            assert(M == P);
+            const J = MatrixType.Rows;
+            assert(N == J);
 
             var outputs = Matrix(M, P).init();
 
@@ -135,6 +136,9 @@ pub fn LayerDense(comptime M: usize, comptime N: usize) type {
     return struct {
         weights: Matrix(M, N),
         biases: Vector(N),
+        output: Matrix(M, N) = Matrix(M, N).init(),
+
+        const Self = @This();
 
         pub fn init() LayerDense(M, N) {
             var m = Matrix(M, N).init();
@@ -153,6 +157,13 @@ pub fn LayerDense(comptime M: usize, comptime N: usize) type {
                 .weights = m,
                 .biases = b,
             };
+        }
+
+        pub fn foward(self: Self, inputs: anytype) void {
+            const MatrixType = @TypeOf(inputs);
+            const P = MatrixType.Cols;
+            assert(M == P);
+            self.output = inputs.product(self.weights).plus(self.biases);
         }
     };
 }
