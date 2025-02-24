@@ -83,6 +83,7 @@ pub fn Vector(comptime M: usize) type {
         values: [M]f64,
 
         const Self = @This();
+        pub const Size = M;
 
         pub fn init() Vector(M) {
             return Vector(M){ .values = [_]f64{0} ** M };
@@ -166,6 +167,34 @@ pub fn LayerDense(comptime M: usize, comptime N: usize) type {
             self.output = inputs.product(self.weights).plus(self.biases);
         }
     };
+}
+
+pub fn reluActivation(inputs: anytype) @TypeOf(inputs) {
+    const Type = @TypeOf(inputs);
+    switch (Type) {
+        Matrix(Type.Rows, Type.Cols) => |_| {
+            const M = @TypeOf(inputs).Rows;
+            const N = @TypeOf(inputs).Cols;
+
+            var output = Matrix(M, N).init();
+            for (0..M) |i| {
+                for (0..N) |j| {
+                    output.values[i].values[j] = @max(0, inputs.values[i].values[j]);
+                }
+            }
+
+            return output;
+        },
+        Vector(Type.Size) => |_| {
+            const size = @TypeOf(inputs).Size;
+            var output = Vector(size).init();
+            for (0..size) |i| {
+                output.values[i] = @max(0, inputs.values[i]);
+            }
+            return output;
+        },
+        else => @compileError("Type not supported"),
+    }
 }
 
 test "matrix product" {

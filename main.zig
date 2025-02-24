@@ -34,6 +34,13 @@ pub fn main() !void {
     // layer.weights.print();
     // std.debug.print("Vector {d}\n", .{layer.biases.values.len});
     // layer.biases.print();
+    //
+
+    //Chapter 4
+    // const inputs = Vector(8){ .values = .{ 0, 2, -1, 3.3, -2.7, 1.1, 2.2, -100 } };
+    // const output = math.reluActivation(inputs);
+    // output.print();
+
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
@@ -44,10 +51,8 @@ pub fn main() !void {
     var spiral_data = try SpiralData.createSpiralData(allocator, 100, 3, random);
     defer spiral_data.deinit(allocator);
     const matrix = try spiral_data.toMatrix(300, 2);
-    // matrix.print();
     const dense_1 = LayerDense(2, 3).init();
-    const ot = matrix.product(dense_1.weights).plus(dense_1.biases);
-    ot.print();
-    // dense_1.foward(matrix);
-    // dense_1.output.print();
+    dense_1.foward(matrix);
+    const output = math.reluActivation(dense_1.output);
+    output.print();
 }
