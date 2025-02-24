@@ -51,8 +51,8 @@ pub fn main() !void {
     var spiral_data = try SpiralData.createSpiralData(allocator, 100, 3, random);
     defer spiral_data.deinit(allocator);
     const matrix = try spiral_data.toMatrix(300, 2);
-    const dense_1 = LayerDense(2, 3).init();
-    dense_1.foward(matrix);
-    const output = math.reluActivation(dense_1.output);
-    output.print();
+    var dense_1 = LayerDense(2, 3).init();
+    var output = dense_1.forward(matrix);
+    output.reluActivation().print();
+    // output.print();
 }

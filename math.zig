@@ -66,6 +66,17 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
             return outputs;
         }
 
+        pub fn reluActivation(self: Self) Matrix(M, N) {
+            var output = Matrix(M, N).init();
+            for (0..M) |i| {
+                for (0..N) |j| {
+                    output.values[i].values[j] = @max(0, self.values[i].values[j]);
+                }
+            }
+
+            return output;
+        }
+
         pub fn print(self: Self) void {
             for (self.values, 0..) |row, i| {
                 row.print();
@@ -137,7 +148,6 @@ pub fn LayerDense(comptime M: usize, comptime N: usize) type {
     return struct {
         weights: Matrix(M, N),
         biases: Vector(N),
-        output: Matrix(M, N) = Matrix(M, N).init(),
 
         const Self = @This();
 
@@ -160,11 +170,11 @@ pub fn LayerDense(comptime M: usize, comptime N: usize) type {
             };
         }
 
-        pub fn foward(self: Self, inputs: anytype) void {
+        pub fn forward(self: *Self, inputs: anytype) Matrix(@TypeOf(inputs).Rows, N) {
             const MatrixType = @TypeOf(inputs);
             const P = MatrixType.Cols;
-            assert(M == P);
-            self.output = inputs.product(self.weights).plus(self.biases);
+            comptime assert(M == P);
+            return inputs.product(self.weights).plus(self.biases);
         }
     };
 }
