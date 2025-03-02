@@ -119,6 +119,24 @@ pub fn Vector(comptime M: usize) type {
             return output;
         }
 
+        pub fn exp(self: Self) Vector(M) {
+            var output = Vector(M).init();
+
+            for (self.values, 0..) |value, i| {
+                output.values[i] = std.math.pow(f64, std.math.e, value);
+            }
+
+            return output;
+        }
+
+        pub fn sum(self: Self) f64 {
+            var norm_base: f64 = 0.0;
+            for (self.values) |value| {
+                norm_base += value;
+            }
+            return norm_base;
+        }
+
         pub fn print(self: Self) void {
             // First check if we have any negative numbers
             var has_negative = false;

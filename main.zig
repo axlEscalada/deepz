@@ -41,18 +41,43 @@ pub fn main() !void {
     // const output = math.reluActivation(inputs);
     // output.print();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
-    var prng = std.Random.DefaultPrng.init(42);
-    const random = prng.random();
-
-    var spiral_data = try SpiralData.createSpiralData(allocator, 100, 3, random);
-    defer spiral_data.deinit(allocator);
-    const matrix = try spiral_data.toMatrix(300, 2);
-    var dense_1 = LayerDense(2, 3).init();
-    var output = dense_1.forward(matrix);
-    output.reluActivation().print();
+    //Chapter 4 ReLu
+    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    // defer _ = gpa.deinit();
+    // const allocator = gpa.allocator();
+    //
+    // var prng = std.Random.DefaultPrng.init(42);
+    // const random = prng.random();
+    //
+    // var spiral_data = try SpiralData.createSpiralData(allocator, 100, 3, random);
+    // defer spiral_data.deinit(allocator);
+    // const matrix = try spiral_data.toMatrix(300, 2);
+    // var dense_1 = LayerDense(2, 3).init();
+    // var output = dense_1.forward(matrix);
+    // output.reluActivation().print();
     // output.print();
+
+    const layer_outputs = Vector(3){ .values = [_]f64{ 4.8, 1.21, 2.385 } };
+    var exp_values = layer_outputs.exp();
+    exp_values.print();
+    const norm_base = exp_values.sum();
+    // for (layer_outputs, 0..) |o, i| {
+    //     exp_values[i] = std.math.pow(f64, std.math.e, o);
+    //     std.debug.print("{d}\n", .{exp_values[i]});
+    // }
+
+    // const norm_base: f64 = sum(&exp_values);
+    //
+    // var norm_values = [_]f64{0} ** 3;
+    // for (exp_values, 0..) |o, i| {
+    //     norm_values[i] = o / norm_base;
+    // }
+    // const norm_values_sum = sum(&norm_values);
+    //
+    // std.debug.print("[", .{});
+    // for (norm_values) |i| {
+    //     std.debug.print("{d}, ", .{i});
+    // }
+    // std.debug.print("]\n", .{});
+    // std.debug.print("{d}\n", .{norm_values_sum});
 }
