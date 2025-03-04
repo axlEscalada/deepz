@@ -87,10 +87,19 @@ pub fn main() !void {
         .{ .values = .{ 1.41, 1.051, 0.026 } },
     } };
 
-    const sum_total = layer_outputs.sum(.total);
+    const sum_total_default = layer_outputs.sum(.{});
+    sum_total_default.print();
+    std.debug.print("\n", .{});
+    const sum_total = layer_outputs.sum(.{ .dimension = .total });
     sum_total.print();
-    const sum_rows = layer_outputs.sum(.rows);
+    std.debug.print("\n", .{});
+    const sum_rows = layer_outputs.sum(.{ .dimension = .rows });
     sum_rows.print();
-    const sum_columns = layer_outputs.sum(.cols);
+    std.debug.print("\n", .{});
+    const sum_columns = layer_outputs.sum(.{ .dimension = .cols });
     sum_columns.print();
+    std.debug.print("\n", .{});
+    const sum_rows_keep_dim = layer_outputs.sum(.{ .dimension = .rows, .keep_dim = true });
+    sum_rows_keep_dim.print();
+    std.debug.print("\n", .{});
 }

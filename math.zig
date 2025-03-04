@@ -1,10 +1,15 @@
 const std = @import("std");
 const assert = std.debug.assert;
 
-const Axis = enum {
-    none,
+const Dimension = enum {
+    total,
     rows,
     cols,
+};
+
+pub const SumOptions = struct {
+    dimension: Dimension = .total,
+    keep_dim: bool = false,
 };
 
 pub fn Matrix(comptime M: usize, comptime N: usize) type {
@@ -83,13 +88,20 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
             return output;
         }
 
-        pub fn sum(self: Self, comptime dimension: enum { rows, cols, total }) switch (dimension) {
-            .rows => Vector(M),
-            .cols => Vector(N),
-            .total => Vector(1),
+        pub fn sum(self: Self, comptime options: SumOptions) switch (options.dimension) {
+            .rows => if (options.keep_dim) Matrix(M, 1) else Vector(M),
+            .cols => if (options.keep_dim) Matrix(1, N) else Vector(N),
+            .total => if (options.keep_dim) Matrix(1, 1) else Vector(1),
         } {
-            switch (dimension) {
+            switch (options.dimension) {
                 .rows => {
+                    if (options.keep_dim) {
+                        var output = Matrix(M, 1).init();
+                        for (0..M) |i| {
+                            output.values[i].values[0] = self.values[i].sum();
+                        }
+                        return output;
+                    }
                     var output = Vector(M).init();
                     for (0..M) |i| {
                         output.values[i] = self.values[i].sum();
@@ -97,6 +109,15 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
                     return output;
                 },
                 .cols => {
+                    if (options.keep_dim) {
+                        var output = Matrix(1, N).init();
+                        for (0..N) |j| {
+                            for (0..M) |i| {
+                                output.values[0].values[j] += self.values[i].values[j];
+                            }
+                        }
+                        return output;
+                    }
                     var output = Vector(N).init();
                     for (0..N) |j| {
                         for (0..M) |i| {
@@ -110,16 +131,24 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
                     for (self.values) |row| {
                         total += row.sum();
                     }
-                    return Vector(1){ .values = [_]f64{total} };
+
+                    if (options.keep_dim) {
+                        return Matrix(1, 1){ .values = [_][1]f64{[_]f64{total}} };
+                    } else {
+                        return Vector(1){ .values = [_]f64{total} };
+                    }
                 },
             }
         }
 
         pub fn print(self: Self) void {
+            std.debug.print("[", .{});
             for (self.values, 0..) |row, i| {
                 row.print();
                 if (i < M - 1) {
                     std.debug.print(",", .{});
+                } else {
+                    std.debug.print("]", .{});
                 }
                 std.debug.print("\n", .{});
             }
