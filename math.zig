@@ -1,6 +1,12 @@
 const std = @import("std");
 const assert = std.debug.assert;
 
+const Axis = enum {
+    none,
+    rows,
+    cols,
+};
+
 pub fn Matrix(comptime M: usize, comptime N: usize) type {
     return struct {
         values: [M]Vector(N),
@@ -44,11 +50,11 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
 
             for (0..M) |i| {
                 for (0..P) |j| {
-                    var sum: f64 = 0;
+                    var o: f64 = 0;
                     for (0..N) |k| {
-                        sum += self.values[i].values[k] * matrix.values[k].values[j];
+                        o += self.values[i].values[k] * matrix.values[k].values[j];
                     }
-                    outputs.values[i].values[j] = sum;
+                    outputs.values[i].values[j] = o;
                 }
             }
 
@@ -75,6 +81,38 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
             }
 
             return output;
+        }
+
+        pub fn sum(self: Self, comptime dimension: enum { rows, cols, total }) switch (dimension) {
+            .rows => Vector(M),
+            .cols => Vector(N),
+            .total => Vector(1),
+        } {
+            switch (dimension) {
+                .rows => {
+                    var output = Vector(M).init();
+                    for (0..M) |i| {
+                        output.values[i] = self.values[i].sum();
+                    }
+                    return output;
+                },
+                .cols => {
+                    var output = Vector(N).init();
+                    for (0..N) |j| {
+                        for (0..M) |i| {
+                            output.values[j] += self.values[i].values[j];
+                        }
+                    }
+                    return output;
+                },
+                .total => {
+                    var total: f64 = 0.0;
+                    for (self.values) |row| {
+                        total += row.sum();
+                    }
+                    return Vector(1){ .values = [_]f64{total} };
+                },
+            }
         }
 
         pub fn print(self: Self) void {
@@ -195,34 +233,6 @@ pub fn LayerDense(comptime M: usize, comptime N: usize) type {
             return inputs.product(self.weights).plus(self.biases);
         }
     };
-}
-
-pub fn reluActivation(inputs: anytype) @TypeOf(inputs) {
-    const Type = @TypeOf(inputs);
-    switch (Type) {
-        Matrix(Type.Rows, Type.Cols) => |_| {
-            const M = @TypeOf(inputs).Rows;
-            const N = @TypeOf(inputs).Cols;
-
-            var output = Matrix(M, N).init();
-            for (0..M) |i| {
-                for (0..N) |j| {
-                    output.values[i].values[j] = @max(0, inputs.values[i].values[j]);
-                }
-            }
-
-            return output;
-        },
-        Vector(Type.Size) => |_| {
-            const size = @TypeOf(inputs).Size;
-            var output = Vector(size).init();
-            for (0..size) |i| {
-                output.values[i] = @max(0, inputs.values[i]);
-            }
-            return output;
-        },
-        else => @compileError("Type not supported"),
-    }
 }
 
 test "matrix product" {

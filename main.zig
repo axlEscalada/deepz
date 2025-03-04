@@ -57,10 +57,10 @@ pub fn main() !void {
     // output.reluActivation().print();
     // output.print();
 
-    const layer_outputs = Vector(3){ .values = [_]f64{ 4.8, 1.21, 2.385 } };
-    var exp_values = layer_outputs.exp();
-    exp_values.print();
-    const norm_base = exp_values.sum();
+    // const layer_outputs = Vector(3){ .values = [_]f64{ 4.8, 1.21, 2.385 } };
+    // var exp_values = layer_outputs.exp();
+    // exp_values.print();
+    // const norm_base = exp_values.sum();
     // for (layer_outputs, 0..) |o, i| {
     //     exp_values[i] = std.math.pow(f64, std.math.e, o);
     //     std.debug.print("{d}\n", .{exp_values[i]});
@@ -80,4 +80,17 @@ pub fn main() !void {
     // }
     // std.debug.print("]\n", .{});
     // std.debug.print("{d}\n", .{norm_values_sum});
+    //
+    const layer_outputs: Matrix(3, 3) = .{ .values = [_]Vector(3){
+        .{ .values = .{ 4.8, 1.21, 2.385 } },
+        .{ .values = .{ 8.9, -1.81, 0.2 } },
+        .{ .values = .{ 1.41, 1.051, 0.026 } },
+    } };
+
+    const sum_total = layer_outputs.sum(.total);
+    sum_total.print();
+    const sum_rows = layer_outputs.sum(.rows);
+    sum_rows.print();
+    const sum_columns = layer_outputs.sum(.cols);
+    sum_columns.print();
 }
