@@ -141,6 +141,19 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
             }
         }
 
+        pub fn max(self: Self) Matrix(M, 1) {
+            var outputs = Matrix(M, 1).init();
+
+            for (0..M) |i| {
+                var o = std.math.floatMin(f64);
+                for (0..N) |j| {
+                    o = @max(o, self.values[i].values[j]);
+                }
+                outputs.values[i].values[0] = o;
+            }
+            return outputs;
+        }
+
         pub fn print(self: Self) void {
             std.debug.print("[", .{});
             for (self.values, 0..) |row, i| {

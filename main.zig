@@ -87,6 +87,9 @@ pub fn main() !void {
         .{ .values = .{ 1.41, 1.051, 0.026 } },
     } };
 
+    const max_values = layer_outputs.max();
+    max_values.print();
+
     const sum_total_default = layer_outputs.sum(.{});
     sum_total_default.print();
     std.debug.print("\n", .{});
