@@ -7,7 +7,7 @@ const Dimension = enum {
     cols,
 };
 
-pub const SumOptions = struct {
+pub const DimensionOptions = struct {
     dimension: Dimension = .total,
     keep_dim: bool = false,
 };
@@ -88,7 +88,29 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
             return output;
         }
 
-        pub fn sum(self: Self, comptime options: SumOptions) switch (options.dimension) {
+        pub fn softmaxActivation(self: Self) Matrix(M, N) {
+            var output = Matrix(M, N).init();
+
+            for (0..M) |rowIndex| {
+                var exp_sum: f64 = 0.0;
+                // Step 1: Compute exp(x) for each element and sum it.
+                for (0..N) |colIndex| {
+                    const value = self.values[rowIndex].values[colIndex];
+                    const exp_value = @exp(value);
+                    output.values[rowIndex].values[colIndex] = exp_value;
+                    exp_sum += exp_value;
+                }
+
+                // Step 2: Normalize each value by dividing with the sum of exponentials.
+                for (0..N) |colIndex| {
+                    output.values[rowIndex].values[colIndex] /= exp_sum;
+                }
+            }
+
+            return output;
+        }
+
+        pub fn sum(self: Self, comptime options: DimensionOptions) switch (options.dimension) {
             .rows => if (options.keep_dim) Matrix(M, 1) else Vector(M),
             .cols => if (options.keep_dim) Matrix(1, N) else Vector(N),
             .total => if (options.keep_dim) Matrix(1, 1) else Vector(1),
@@ -134,24 +156,56 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
 
                     if (options.keep_dim) {
                         return Matrix(1, 1){ .values = [_][1]f64{[_]f64{total}} };
-                    } else {
-                        return Vector(1){ .values = [_]f64{total} };
                     }
+                    return Vector(1){ .values = [_]f64{total} };
                 },
             }
         }
 
-        pub fn max(self: Self) Matrix(M, 1) {
-            var outputs = Matrix(M, 1).init();
+        pub fn max(self: Self, comptime options: DimensionOptions) switch (options.dimension) {
+            .rows => if (options.keep_dim) Matrix(M, 1) else Vector(M),
+            .cols => if (options.keep_dim) Matrix(1, N) else Vector(N),
+            .total => if (options.keep_dim) Matrix(1, 1) else Vector(1),
+        } {
+            switch (options.dimension) {
+                .rows => {
+                    var outputs = Matrix(M, 1).init();
 
-            for (0..M) |i| {
-                var o = std.math.floatMin(f64);
-                for (0..N) |j| {
-                    o = @max(o, self.values[i].values[j]);
-                }
-                outputs.values[i].values[0] = o;
+                    for (0..M) |i| {
+                        var o = std.math.floatMin(f64);
+                        for (0..N) |j| {
+                            o = @max(o, self.values[i].values[j]);
+                        }
+                        outputs.values[i].values[0] = o;
+                    }
+                    return outputs;
+                },
+                .cols => {
+                    var outputs = Matrix(1, N).init();
+
+                    for (0..N) |i| {
+                        var o = std.math.floatMin(f64);
+                        for (0..M) |j| {
+                            o = @max(o, self.values[j].values[i]);
+                        }
+                        outputs.values[0].values[i] = o;
+                    }
+                    return outputs;
+                },
+                .total => {
+                    var outputs = Matrix(1, 1).init();
+                    outputs.values[0].values[0] = std.math.floatMin(f64);
+
+                    for (0..N) |i| {
+                        var o = std.math.floatMin(f64);
+                        for (0..M) |j| {
+                            o = @max(o, self.values[i].values[j]);
+                        }
+                        outputs.values[0].values[0] = @max(outputs.values[0].values[0], o);
+                    }
+                    return outputs;
+                },
             }
-            return outputs;
         }
 
         pub fn print(self: Self) void {
@@ -203,7 +257,7 @@ pub fn Vector(comptime M: usize) type {
             var output = Vector(M).init();
 
             for (self.values, 0..) |value, i| {
-                output.values[i] = std.math.pow(f64, std.math.e, value);
+                output.values[i] = @exp(value);
             }
 
             return output;
@@ -384,4 +438,71 @@ test "matrix transpose" {
     try std.testing.expectApproxEqAbs(result.values[0].values[1], 5, 0.01);
     try std.testing.expectApproxEqAbs(result.values[0].values[2], 10, 0.01);
     try std.testing.expectApproxEqAbs(result.values[0].values[3], 15, 0.01);
+}
+
+test "test exp function in Vector" {
+    // Create a sample vector with 4 elements for testing
+    var input_vector = Vector(4).init();
+    input_vector.values = [_]f64{ 0.0, 1.0, -1.0, 2.0 };
+
+    // Call the exp method on the vector
+    const result_vector = input_vector.exp();
+
+    // Define the expected output
+    const expected_values = [_]f64{
+        1.0, // exp(0) = 1.0
+        2.718281828459045, // exp(1) = e^1
+        0.36787944117144233, // exp(-1) = e^-1
+        7.38905609893065, // exp(2) = e^2
+    };
+
+    // Allow for floating-point tolerance
+    const tolerance = 0.0001;
+
+    // Assert that the results match the expected values
+    for (0..4) |i| {
+        const diff = result_vector.values[i] - expected_values[i];
+        assert(@abs(diff) <= tolerance);
+    }
+}
+
+test "test max function rows dimension and keeping dimension" {
+    const matrix_a: Matrix(3, 3) = .{ .values = [_]Vector(3){
+        .{ .values = .{ 0, 1, 2 } },
+        .{ .values = .{ 5, 8, 7 } },
+        .{ .values = .{ 20, 11, 12 } },
+    } };
+
+    const result = matrix_a.max(.{ .dimension = .rows, .keep_dim = true});
+
+    try std.testing.expectApproxEqAbs(result.values[0].values[0], 2, 0.01);
+    try std.testing.expectApproxEqAbs(result.values[1].values[0], 8, 0.01);
+    try std.testing.expectApproxEqAbs(result.values[2].values[0], 20, 0.01);
+}
+
+
+test "test max function cols dimension and keeping dimension" {
+    const matrix_a: Matrix(3, 3) = .{ .values = [_]Vector(3){
+        .{ .values = .{ 0, 1, 2 } },
+        .{ .values = .{ 5, 8, 7 } },
+        .{ .values = .{ 20, 11, 12 } },
+    } };
+
+    const result = matrix_a.max(.{ .dimension = .cols, .keep_dim = true});
+
+    try std.testing.expectApproxEqAbs(result.values[0].values[0], 20, 0.01);
+    try std.testing.expectApproxEqAbs(result.values[0].values[1], 11, 0.01);
+    try std.testing.expectApproxEqAbs(result.values[0].values[2], 12, 0.01);
+}
+
+test "test max function total" {
+    const matrix_a: Matrix(3, 3) = .{ .values = [_]Vector(3){
+        .{ .values = .{ 0, 1, 2 } },
+        .{ .values = .{ 5, 8, 7 } },
+        .{ .values = .{ 20, 11, 12 } },
+    } };
+
+    const result = matrix_a.max(.{ .dimension = .total, .keep_dim = true});
+
+    try std.testing.expectApproxEqAbs(result.values[0].values[0], 20, 0.01);
 }

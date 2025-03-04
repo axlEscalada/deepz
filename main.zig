@@ -105,4 +105,11 @@ pub fn main() !void {
     const sum_rows_keep_dim = layer_outputs.sum(.{ .dimension = .rows, .keep_dim = true });
     sum_rows_keep_dim.print();
     std.debug.print("\n", .{});
+
+    std.debug.print("Sofmtax activation: \n", .{});
+    const inputs : Matrix(1, 3) = .{ .values = [_]Vector(3){
+        .{ .values = .{1,2,3}},
+    }};
+    const output = inputs.softmaxActivation();
+    output.print();
 }
