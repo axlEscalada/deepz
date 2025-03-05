@@ -155,7 +155,7 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
                     }
 
                     if (options.keep_dim) {
-                        return Matrix(1, 1){ .values = [_][1]f64{[_]f64{total}} };
+                        return Matrix(1, 1){ .values = [_]Vector(1){ Vector(1){ .values = [_]f64{total} } } };
                     }
                     return Vector(1){ .values = [_]f64{total} };
                 },
@@ -193,17 +193,19 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
                     return outputs;
                 },
                 .total => {
-                    var outputs = Matrix(1, 1).init();
-                    outputs.values[0].values[0] = std.math.floatMin(f64);
+                    var total: f64 = std.math.floatMin(f64);
 
                     for (0..N) |i| {
                         var o = std.math.floatMin(f64);
                         for (0..M) |j| {
                             o = @max(o, self.values[i].values[j]);
                         }
-                        outputs.values[0].values[0] = @max(outputs.values[0].values[0], o);
+                        total = @max(total, o);
                     }
-                    return outputs;
+                    if (options.keep_dim) {
+                        return Matrix(1, 1){ .values = [_]Vector(1){ Vector(1){ .values = [_]f64{total} } } };
+                    }
+                    return Vector(1){ .values = [_]f64{total} };
                 },
             }
         }
@@ -466,6 +468,32 @@ test "test exp function in Vector" {
     }
 }
 
+
+test "test sum function total keeping dim" {
+    const matrix_a: Matrix(3, 3) = .{ .values = [_]Vector(3){
+        .{ .values = .{ 0, 1, 2 } },
+        .{ .values = .{ 5, 8, 7 } },
+        .{ .values = .{ 20, 11, 12 } },
+    } };
+
+    const result = matrix_a.sum(.{ .dimension = .total, .keep_dim = true});
+
+    try std.testing.expectEqual(result.values[0].values[0], 66);
+}
+
+
+test "test sum function total not keeping dim" {
+    const matrix_a: Matrix(3, 3) = .{ .values = [_]Vector(3){
+        .{ .values = .{ 0, 1, 2 } },
+        .{ .values = .{ 5, 8, 7 } },
+        .{ .values = .{ 20, 11, 12 } },
+    } };
+
+    const result = matrix_a.sum(.{ .dimension = .total, .keep_dim = false});
+
+    try std.testing.expectEqual(result.values[0], 66);
+}
+
 test "test max function rows dimension and keeping dimension" {
     const matrix_a: Matrix(3, 3) = .{ .values = [_]Vector(3){
         .{ .values = .{ 0, 1, 2 } },
@@ -475,9 +503,9 @@ test "test max function rows dimension and keeping dimension" {
 
     const result = matrix_a.max(.{ .dimension = .rows, .keep_dim = true});
 
-    try std.testing.expectApproxEqAbs(result.values[0].values[0], 2, 0.01);
-    try std.testing.expectApproxEqAbs(result.values[1].values[0], 8, 0.01);
-    try std.testing.expectApproxEqAbs(result.values[2].values[0], 20, 0.01);
+    try std.testing.expectEqual(result.values[0].values[0], 2);
+    try std.testing.expectEqual(result.values[1].values[0], 8);
+    try std.testing.expectEqual(result.values[2].values[0], 20);
 }
 
 
@@ -490,12 +518,12 @@ test "test max function cols dimension and keeping dimension" {
 
     const result = matrix_a.max(.{ .dimension = .cols, .keep_dim = true});
 
-    try std.testing.expectApproxEqAbs(result.values[0].values[0], 20, 0.01);
-    try std.testing.expectApproxEqAbs(result.values[0].values[1], 11, 0.01);
-    try std.testing.expectApproxEqAbs(result.values[0].values[2], 12, 0.01);
+    try std.testing.expectEqual(result.values[0].values[0], 20);
+    try std.testing.expectEqual(result.values[0].values[1], 11);
+    try std.testing.expectEqual(result.values[0].values[2], 12);
 }
 
-test "test max function total" {
+test "test max function total keeping dim" {
     const matrix_a: Matrix(3, 3) = .{ .values = [_]Vector(3){
         .{ .values = .{ 0, 1, 2 } },
         .{ .values = .{ 5, 8, 7 } },
@@ -504,5 +532,18 @@ test "test max function total" {
 
     const result = matrix_a.max(.{ .dimension = .total, .keep_dim = true});
 
-    try std.testing.expectApproxEqAbs(result.values[0].values[0], 20, 0.01);
+    try std.testing.expectEqual(result.values[0].values[0], 20);
+}
+
+
+test "test max function total not keeping dim" {
+    const matrix_a: Matrix(3, 3) = .{ .values = [_]Vector(3){
+        .{ .values = .{ 0, 1, 2 } },
+        .{ .values = .{ 5, 8, 7 } },
+        .{ .values = .{ 20, 11, 12 } },
+    } };
+
+    const result = matrix_a.max(.{ .dimension = .total, .keep_dim = false});
+
+    try std.testing.expectEqual(result.values[0], 20);
 }
