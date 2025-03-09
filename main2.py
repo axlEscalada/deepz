@@ -14,10 +14,35 @@ class Layer_Dense:
         self.output = np.dot(inputs, self.weights) + self.biases
 
 
-X, y = spiral_data(samples=100, classes=3)
+# X, y = spiral_data(samples=100, classes=3)
+#
+# dense1 = Layer_Dense(2, 3)
+#
+# dense1.forward(X)
+#
+# print(dense1.output)
 
-dense1 = Layer_Dense(2, 3)
 
-dense1.forward(X)
+class Activtion_Softmax:
+    def forward(self, inputs):
+        max = np.max(inputs, axis=1, keepdims=True)
+        print(max)
+        subs = inputs - max
+        print(subs)
+        exp_values = np.exp(subs)
+        print(exp_values)
+        probabilities = exp_values / np.sum(exp_values, axis=1, keepdims=True)
+        self.output = probabilities
 
-print(dense1.output)
+
+# inputs = np.array([[4.8, 1.21, 2.385], [8.9, -1.81, 0.2], [1.41, 1.051, 0.026]])
+# softmax = Activtion_Softmax()
+# softmax.forward(inputs)
+#
+# print(softmax.output)
+
+# inputs = np.array([4.8, 1.21, 2.385])
+inputs = np.array([[4.8, 1.21, 2.385], [8.9, -1.81, 0.2], [1.41, 1.051, 0.026]])
+max_inputs = np.max(inputs, axis=1, keepdims=True)
+print(max_inputs)
+print(inputs - max_inputs)
