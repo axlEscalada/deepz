@@ -1,8 +1,10 @@
 import numpy as np
-import nnfs
-from nnfs.datasets import spiral_data
 
-nnfs.init()
+# import nnfs
+# from nnfs.datasets import spiral_data
+#
+# nnfs.init()
+#
 
 
 class Layer_Dense:
@@ -43,9 +45,16 @@ class Activtion_Softmax:
 
 # inputs = np.array([4.8, 1.21, 2.385])
 inputs = np.array([[4.8, 1.21, 2.385], [8.9, -1.81, 0.2], [1.41, 1.051, 0.026]])
-print(inputs)
-max_inputs = np.max(inputs, axis=1, keepdims=False)
-print(max_inputs)
-print(inputs - max_inputs)
+# print(inputs)
+max_inputs = np.max(inputs, axis=1, keepdims=True)
+# print(max_inputs)
+sub = inputs - max_inputs
+# print(sub)
+exp_values = np.exp(sub)
+print(exp_values)
+sum = np.sum(exp_values, axis=1, keepdims=True)
+print(sum)
+probabilities = exp_values / sum
+print(probabilities)
 # ot = np.array([[8.9, -1.81, 0.2], [1.41, 1.051, 0.026]])
 # print(inputs - ot)

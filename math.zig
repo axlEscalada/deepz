@@ -12,6 +12,11 @@ const Dimension = enum {
     col,
 };
 
+const Operation = enum {
+    Subtract,
+    Divide,
+};
+
 pub const DimensionOptions = struct {
     dimension: Dimension = .total,
     keep_dim: bool = false,
@@ -52,32 +57,46 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
         }
 
         pub fn subs(self: Self, inputs: anytype) Matrix(M, N) {
+            return self.applyOperation(inputs, .Subtract);
+        }
+
+        pub fn div(self: Self, inputs: anytype) Matrix(M, N) {
+            return self.applyOperation(inputs, .Divide);
+        }
+
+        pub fn applyOperation(self: Self, inputs: anytype, op: Operation) Matrix(M, N) {
             const InputType = @TypeOf(inputs);
+            var result = Matrix(M, N).init();
+
             switch (InputType.Type) {
                 .Matrix => {
                     comptime assert(InputType.Rows == M and (InputType.Cols == 1 or InputType.Cols == N));
 
-                    var result = Matrix(M, N).init();
                     for (0..M) |i| {
                         for (0..N) |j| {
                             const idx = if (InputType.Cols == N) j else 0;
-                            result.values[i].values[j] = self.values[i].values[j] - inputs.values[i].values[idx];
+                            result.values[i].values[j] = switch (op) {
+                                .Subtract => self.values[i].values[j] - inputs.values[i].values[idx],
+                                .Divide => self.values[i].values[j] / inputs.values[i].values[idx],
+                            };
                         }
                     }
-                    return result;
                 },
                 .Vector => {
                     comptime assert(@TypeOf(inputs).Size == M);
-                    var result = Matrix(M, N).init();
 
                     for (0..M) |i| {
                         for (0..N) |j| {
-                            result.values[i].values[j] = self.values[i].values[j] - inputs.values[j];
+                            result.values[i].values[j] = switch (op) {
+                                .Subtract => self.values[i].values[j] - inputs.values[j],
+                                .Divide => self.values[i].values[j] / inputs.values[j],
+                            };
                         }
                     }
-                    return result;
                 },
             }
+
+            return result;
         }
 
         pub fn product(self: Self, matrix: anytype) Matrix(M, @TypeOf(matrix).Cols) {
@@ -112,6 +131,16 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
             return outputs;
         }
 
+        pub fn exp(self: Self) Matrix(M, N) {
+            var output = Matrix(M, N).init();
+
+            for (self.values, 0..) |value, i| {
+                output.values[i] = value.exp();
+            }
+
+            return output;
+        }
+
         pub fn reluActivation(self: Self) Matrix(M, N) {
             var output = Matrix(M, N).init();
             for (0..M) |i| {
@@ -124,31 +153,12 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
         }
 
         pub fn softmaxActivation(self: Self) Matrix(M, N) {
-            var output = Matrix(M, N).init();
-
-            // Find the maximum value in each row for numerical stability
-            for (0..M) |rowIndex| {
-                // Create a temporary matrix to represent the current row
-                var row_matrix = Matrix(1, N){ .values = [_]Vector(N){self.values[rowIndex]} };
-                const max_result = row_matrix.max(.{ .dimension = .total, .keep_dim = false });
-                const row_max = max_result.values[0];
-
-                var exp_sum: f64 = 0.0;
-                // Step 1: Compute exp(x - max) for each element and sum it.
-                for (0..N) |colIndex| {
-                    const value = self.values[rowIndex].values[colIndex];
-                    const exp_value = @exp(value - row_max);
-                    output.values[rowIndex].values[colIndex] = exp_value;
-                    exp_sum += exp_value;
-                }
-
-                // Step 2: Normalize each value by dividing with the sum of exponentials.
-                for (0..N) |colIndex| {
-                    output.values[rowIndex].values[colIndex] /= exp_sum;
-                }
-            }
-
-            return output;
+            const max_values = self.max(.{ .dimension = .row, .keep_dim = true });
+            const op = self.subs(max_values);
+            const exp_values = op.exp();
+            const sum_values = exp_values.sum(.{ .dimension = .row, .keep_dim = true });
+            const probabilities = exp_values.div(sum_values);
+            return probabilities;
         }
 
         pub fn sum(self: Self, comptime options: DimensionOptions) switch (options.dimension) {
@@ -371,7 +381,7 @@ pub fn Vector(comptime M: usize) type {
                 if (has_negative and value >= 0) {
                     std.debug.print(" ", .{});
                 }
-                std.debug.print("{d:.4}", .{value});
+                std.debug.print("{d:.8}", .{value});
                 if (i < M - 1) {
                     std.debug.print(", ", .{});
                 }
