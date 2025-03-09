@@ -86,30 +86,38 @@ pub fn main() !void {
         .{ .values = .{ 8.9, -1.81, 0.2 } },
         .{ .values = .{ 1.41, 1.051, 0.026 } },
     } };
-
-    const max_values = layer_outputs.max();
-    max_values.print();
-
-    const sum_total_default = layer_outputs.sum(.{});
-    sum_total_default.print();
+    layer_outputs.print();
     std.debug.print("\n", .{});
-    const sum_total = layer_outputs.sum(.{ .dimension = .total });
-    sum_total.print();
+    const max = layer_outputs.max(.{ .dimension = .row, .keep_dim = false });
+    max.print();
     std.debug.print("\n", .{});
-    const sum_rows = layer_outputs.sum(.{ .dimension = .rows });
-    sum_rows.print();
-    std.debug.print("\n", .{});
-    const sum_columns = layer_outputs.sum(.{ .dimension = .cols });
-    sum_columns.print();
-    std.debug.print("\n", .{});
-    const sum_rows_keep_dim = layer_outputs.sum(.{ .dimension = .rows, .keep_dim = true });
-    sum_rows_keep_dim.print();
+    const op = layer_outputs.subs(max);
+    op.print();
     std.debug.print("\n", .{});
 
-    std.debug.print("Sofmtax activation: \n", .{});
-    const inputs : Matrix(1, 3) = .{ .values = [_]Vector(3){
-        .{ .values = .{1,2,3}},
-    }};
-    const output = inputs.softmaxActivation();
-    output.print();
+    // const max_values = layer_outputs.max();
+    // max_values.print();
+    //
+    // const sum_total_default = layer_outputs.sum(.{});
+    // sum_total_default.print();
+    // std.debug.print("\n", .{});
+    // const sum_total = layer_outputs.sum(.{ .dimension = .total });
+    // sum_total.print();
+    // std.debug.print("\n", .{});
+    // const sum_rows = layer_outputs.sum(.{ .dimension = .rows });
+    // sum_rows.print();
+    // std.debug.print("\n", .{});
+    // const sum_columns = layer_outputs.sum(.{ .dimension = .cols });
+    // sum_columns.print();
+    // std.debug.print("\n", .{});
+    // const sum_rows_keep_dim = layer_outputs.sum(.{ .dimension = .rows, .keep_dim = true });
+    // sum_rows_keep_dim.print();
+    // std.debug.print("\n", .{});
+    //
+    // std.debug.print("Sofmtax activation: \n", .{});
+    // const inputs : Matrix(1, 3) = .{ .values = [_]Vector(3){
+    //     .{ .values = .{1,2,3}},
+    // }};
+    // const output = inputs.softmaxActivation();
+    // output.print();
 }

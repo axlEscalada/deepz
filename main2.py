@@ -43,6 +43,9 @@ class Activtion_Softmax:
 
 # inputs = np.array([4.8, 1.21, 2.385])
 inputs = np.array([[4.8, 1.21, 2.385], [8.9, -1.81, 0.2], [1.41, 1.051, 0.026]])
-max_inputs = np.max(inputs, axis=1, keepdims=True)
+print(inputs)
+max_inputs = np.max(inputs, axis=1, keepdims=False)
 print(max_inputs)
 print(inputs - max_inputs)
+# ot = np.array([[8.9, -1.81, 0.2], [1.41, 1.051, 0.026]])
+# print(inputs - ot)

@@ -1,6 +1,11 @@
 const std = @import("std");
 const assert = std.debug.assert;
 
+const MathType = enum {
+    Matrix,
+    Vector,
+};
+
 const Dimension = enum {
     total,
     row,
@@ -20,6 +25,7 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
 
         pub const Rows = M;
         pub const Cols = N;
+        pub const Type = MathType.Matrix;
         const Self = @This();
 
         pub fn init() Matrix(M, N) {
@@ -43,6 +49,35 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
                 outputs.values[i].values = inputs.plus(self.values[i]);
             }
             return outputs;
+        }
+
+        pub fn subs(self: Self, inputs: anytype) Matrix(M, N) {
+            const InputType = @TypeOf(inputs);
+            switch (InputType.Type) {
+                .Matrix => {
+                    comptime assert(InputType.Rows == M and (InputType.Cols == 1 or InputType.Cols == N));
+
+                    var result = Matrix(M, N).init();
+                    for (0..M) |i| {
+                        for (0..N) |j| {
+                            const idx = if (InputType.Cols == N) j else 0;
+                            result.values[i].values[j] = self.values[i].values[j] - inputs.values[i].values[idx];
+                        }
+                    }
+                    return result;
+                },
+                .Vector => {
+                    comptime assert(@TypeOf(inputs).Size == M);
+                    var result = Matrix(M, N).init();
+
+                    for (0..M) |i| {
+                        for (0..N) |j| {
+                            result.values[i].values[j] = self.values[i].values[j] - inputs.values[j];
+                        }
+                    }
+                    return result;
+                },
+            }
         }
 
         pub fn product(self: Self, matrix: anytype) Matrix(M, @TypeOf(matrix).Cols) {
@@ -248,6 +283,7 @@ pub fn Vector(comptime M: usize) type {
 
         const Self = @This();
         pub const Size = M;
+        pub const Type = MathType.Vector;
 
         pub fn init() Vector(M) {
             return Vector(M){ .values = [_]f64{0} ** M };
