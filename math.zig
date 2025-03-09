@@ -153,11 +153,8 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
         }
 
         pub fn softmaxActivation(self: Self) Matrix(M, N) {
-            const max_values = self.max(.{ .dimension = .row, .keep_dim = true });
-            const op = self.subs(max_values);
-            const exp_values = op.exp();
-            const sum_values = exp_values.sum(.{ .dimension = .row, .keep_dim = true });
-            const probabilities = exp_values.div(sum_values);
+            const exp_values = self.subs(self.max(.{ .dimension = .row, .keep_dim = true })).exp();
+            const probabilities = exp_values.div(exp_values.sum(.{ .dimension = .row, .keep_dim = true }));
             return probabilities;
         }
 
@@ -397,6 +394,35 @@ pub fn LayerDense(comptime M: usize, comptime N: usize) type {
         biases: Vector(N),
 
         const Self = @This();
+
+        // pub fn init() LayerDense(M, N) {
+        //     var m = Matrix(M, N).init();
+        //     var b = Vector(N).init();
+        //
+        //     // Use fixed weights and biases for testing
+        //     const fixed_weights = [_][N]f64{
+        //         [_]f64{ 0.01, 0.02, 0.03 } ** (N / 3),
+        //         [_]f64{ 0.04, 0.05, 0.06 } ** (N / 3),
+        //     };
+        //
+        //     const fixed_biases = [_]f64{ 0.1, 0.2, 0.3 } ** (N / 3);
+        //
+        //     // Initialize with fixed values
+        //     for (0..M) |i| {
+        //         for (0..N) |j| {
+        //             m.values[i].values[j] = fixed_weights[i % fixed_weights.len][j % fixed_weights[0].len];
+        //         }
+        //     }
+        //
+        //     for (0..N) |j| {
+        //         b.values[j] = fixed_biases[j % fixed_biases.len];
+        //     }
+        //
+        //     return .{
+        //         .weights = m,
+        //         .biases = b,
+        //     };
+        // }
 
         pub fn init() LayerDense(M, N) {
             var m = Matrix(M, N).init();
