@@ -22,6 +22,11 @@ pub const DimensionOptions = struct {
     keep_dim: bool = false,
 };
 
+pub const RageFmt = struct {
+    from: usize = 0,
+    to: usize = 0,
+};
+
 pub fn Matrix(comptime M: usize, comptime N: usize) type {
     return struct {
         values: [M]Vector(N),
@@ -360,10 +365,11 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
             return negative_log_likelihoods.mean();
         }
 
-        pub fn print(self: Self) void {
+        pub fn print(self: Self, options: RageFmt) void {
             std.debug.print("[", .{});
-            for (self.values, 0..) |row, i| {
-                row.print();
+            const to = if (options.to == 0) M else options.to;
+            for (options.from..to) |i| {
+                self.values[i].print();
                 if (i < M - 1) {
                     std.debug.print(",", .{});
                 } else {
@@ -484,7 +490,9 @@ pub fn Vector(comptime M: usize) type {
             return output;
         }
 
-        pub fn print(self: Self) void {
+        pub fn print(
+            self: Self,
+        ) void {
             // First check if we have any negative numbers
             var has_negative = false;
             for (self.values) |value| {

@@ -25,7 +25,7 @@ pub fn main() !void {
     const output_relu = output_dense_1.reluActivation();
     var output_dense_2 = dense_2.forward(output_relu);
     const output = output_dense_2.softmaxActivation();
+    output.print(.{ .to = 5 });
     const loss = try output.calculateLoss(y);
-    output.print();
     std.debug.print("\n Loss: {d} \n", .{loss});
 }
