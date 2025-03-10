@@ -18,12 +18,12 @@ pub fn main() !void {
     //
     // const matrix = try spiral_data.toMatrix(300, 2);
     // matrix.print();
-    const matrix: Matrix(4, 2) = .{ .values = [_]Vector(2){
-        .{ .values = .{ 0.00000000, 0.00000000 } },
-        .{ .values = .{ 0.00073415, 0.01007430 } },
-        .{ .values = .{ 0.00431511, 0.01973579 } },
-        .{ .values = .{ 0.02011100, 0.02266763 } },
-    } };
+    const matrix = Matrix(4, 2).from(.{
+        .{ 0.00000000, 0.00000000 },
+        .{ 0.00073415, 0.01007430 },
+        .{ 0.00431511, 0.01973579 },
+        .{ 0.02011100, 0.02266763 },
+    });
 
     var dense_1 = LayerDense(2, 3).init();
     var dense_2 = LayerDense(3, 3).init();

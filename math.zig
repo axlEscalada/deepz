@@ -37,6 +37,22 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
             return Matrix(M, N){ .values = [_]Vector(N){Vector(N).init()} ** M };
         }
 
+        pub fn from(comptime rows: [M][N]f64) Matrix(M, N) {
+            var m = Matrix(M, N){
+                .values = undefined,
+            };
+
+            inline for (rows, 0..) |row, i| {
+                comptime var vector_values: [N]f64 = undefined;
+                inline for (row, 0..) |value, j| {
+                    vector_values[j] = value;
+                }
+                m.values[i] = Vector(N){ .values = vector_values };
+            }
+
+            return m;
+        }
+
         pub fn dot(self: Self, inputs: [N]f64) Vector(M) {
             var layer_outputs: [M]f64 = [_]f64{0} ** M;
 
