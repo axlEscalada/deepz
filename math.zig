@@ -37,6 +37,26 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
             return Matrix(M, N){ .values = [_]Vector(N){Vector(N).init()} ** M };
         }
 
+        pub fn fromSlice(data: [][]f64) !Matrix(M, N) {
+            if (data.len != M) return error.InvalidRowCount;
+
+            var m = Matrix(M, N){
+                .values = undefined,
+            };
+
+            for (data, 0..) |row, i| {
+                if (row.len != N) return error.InvalidColumnCount;
+
+                var vector_values: [N]f64 = undefined;
+                for (row, 0..) |value, j| {
+                    vector_values[j] = value;
+                }
+                m.values[i] = Vector(N){ .values = vector_values };
+            }
+
+            return m;
+        }
+
         pub fn from(comptime rows: [M][N]f64) Matrix(M, N) {
             var m = Matrix(M, N){
                 .values = undefined,
@@ -285,6 +305,61 @@ pub fn Matrix(comptime M: usize, comptime N: usize) type {
             }
         }
 
+        pub fn getValuesByIndexes(self: Self, index: Vector(M)) !Vector(M) {
+            var correct_confidences = Vector(M).init();
+
+            for (0..M) |i| {
+                const true_class: usize = @intFromFloat(index.values[i]);
+
+                if (true_class >= self.values[i].values.len) {
+                    return error.IndexOutOfBounds;
+                }
+
+                correct_confidences.values[i] = self.values[i].values[true_class];
+            }
+
+            return correct_confidences;
+        }
+
+        pub fn clip(self: Self, min_val: f64, max_val: f64) Matrix(M, N) {
+            var output = Matrix(M, N).init();
+            for (self.values, 0..M) |row, i| {
+                for (row.values, 0..N) |value, j| {
+                    if (value < min_val) {
+                        output.values[i].values[j] = min_val;
+                    } else if (value > max_val) {
+                        output.values[i].values[j] = max_val;
+                    } else {
+                        output.values[i].values[j] = value;
+                    }
+                }
+            }
+            return output;
+        }
+
+        pub fn mean(self: Self) !Vector(M) {
+            var output = Vector(M).init();
+
+            for (self.values) |row| {
+                for (row.values, 0..) |val, col_idx| {
+                    output.values[col_idx] += val;
+                }
+            }
+
+            for (output) |*val| {
+                val.* /= M;
+            }
+
+            return output;
+        }
+
+        pub fn calculateLoss(self: Self, y: Vector(M)) !f64 {
+            const clipped = self.clip(1e-7, 1 - 1e-7);
+            const correct_confidences = try clipped.getValuesByIndexes(y);
+            const negative_log_likelihoods = correct_confidences.log();
+            return negative_log_likelihoods.mean();
+        }
+
         pub fn print(self: Self) void {
             std.debug.print("[", .{});
             for (self.values, 0..) |row, i| {
@@ -310,6 +385,17 @@ pub fn Vector(comptime M: usize) type {
 
         pub fn init() Vector(M) {
             return Vector(M){ .values = [_]f64{0} ** M };
+        }
+
+        pub fn fromSlice(data: []f64) !Vector(M) {
+            if (data.len != M) return error.InvalidRowCount;
+
+            var m = Vector(M).init();
+            for (data, 0..) |row, i| {
+                m.values[i] = row;
+            }
+
+            return m;
         }
 
         pub fn plus(self: Self, vector: Vector(M)) [M]f64 {
@@ -377,6 +463,25 @@ pub fn Vector(comptime M: usize) type {
                     unreachable;
                 },
             }
+        }
+
+        pub fn mean(self: Self) f64 {
+            if (M == 0) return 0.0;
+
+            var output: f64 = 0.0;
+            for (self.values) |value| {
+                output += value;
+            }
+
+            return output / @as(f64, @floatFromInt(M));
+        }
+
+        pub fn log(self: Self) Vector(M) {
+            var output = Vector(M).init();
+            for (self.values, 0..) |value, i| {
+                output.values[i] = std.math.log10(value);
+            }
+            return output;
         }
 
         pub fn print(self: Self) void {
